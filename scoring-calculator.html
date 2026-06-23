@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Content Audit — Scoring Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fi-paper:#F2EFE9; --fi-card:#F8F5EF; --fi-ink:#191714; --fi-stone:#6E665C;
+    --fi-hairline:#DCD5C9; --fi-ember:#DA4F2E; --fi-ember-tint:#F0D9C9;
+    --fi-serif:'Instrument Serif',Georgia,serif; --fi-sans:'Hanken Grotesk',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--fi-paper);color:var(--fi-ink);font-family:var(--fi-sans);
+    padding:28px;display:flex;justify-content:center}
+  .card{width:100%;max-width:600px;background:var(--fi-card);border:1px solid var(--fi-hairline);
+    border-radius:16px;box-shadow:0 30px 60px -40px rgba(25,23,20,.5);padding:30px 32px}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--fi-ember)}
+  h1{font-family:var(--fi-serif);font-weight:400;font-size:2.4rem;line-height:1.04;margin:8px 0 4px}
+  .sub{color:var(--fi-stone);font-size:.95rem;margin:0 0 22px}
+  .dim{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid var(--fi-hairline)}
+  .dim .label{font-weight:600;font-size:.98rem}
+  .dim .q{display:block;font-weight:400;color:var(--fi-stone);font-size:.8rem;margin-top:2px}
+  .seg{display:flex;gap:6px;flex:0 0 auto}
+  .seg button{font-family:var(--fi-sans);font-weight:600;font-size:.95rem;width:42px;height:42px;
+    border:1px solid var(--fi-hairline);background:var(--fi-paper);color:var(--fi-ink);border-radius:9px;cursor:pointer;transition:.12s}
+  .seg button:hover{border-color:var(--fi-ink)}
+  .seg button[aria-pressed="true"]{background:var(--fi-ink);color:var(--fi-paper);border-color:var(--fi-ink)}
+  .total{display:flex;align-items:baseline;gap:10px;margin:22px 0 4px}
+  .total .n{font-family:var(--fi-serif);font-size:3rem;line-height:1}
+  .total .lab{color:var(--fi-stone);font-size:.95rem}
+  .result{margin-top:18px;background:var(--fi-ember-tint);border-left:3px solid var(--fi-ember);
+    border-radius:9px;padding:16px 18px}
+  .result .k{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--fi-stone)}
+  .result .d{font-family:var(--fi-serif);font-size:1.9rem;line-height:1.05;margin:2px 0 6px}
+  .result .why{font-size:.92rem;color:var(--fi-ink);margin:0}
+  .note{font-size:.82rem;color:var(--fi-stone);margin:14px 0 0;font-style:italic}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="eyebrow">The Content Audit</div>
+    <h1>Score an asset.</h1>
+    <p class="sub">Four dimensions, 1–4 each. The score points to a decision — you make the call and write the reason.</p>
+
+    <div class="dim" data-dim="a">
+      <div class="label">Accuracy<span class="q">Reflects what's currently true?</span></div>
+      <div class="seg" role="group" aria-label="Accuracy"></div>
+    </div>
+    <div class="dim" data-dim="r">
+      <div class="label">Relevance<span class="q">Still serves its audience?</span></div>
+      <div class="seg" role="group" aria-label="Relevance"></div>
+    </div>
+    <div class="dim" data-dim="f">
+      <div class="label">Findability<span class="q">Can the right person find it?</span></div>
+      <div class="seg" role="group" aria-label="Findability"></div>
+    </div>
+    <div class="dim" data-dim="q">
+      <div class="label">Quality<span class="q">Clear, complete, well structured?</span></div>
+      <div class="seg" role="group" aria-label="Quality"></div>
+    </div>
+
+    <div class="total"><span class="n" id="total">—</span><span class="lab">/ 16 total</span></div>
+
+    <div class="result" id="result" hidden>
+      <div class="k">Suggested decision</div>
+      <div class="d" id="decision"></div>
+      <p class="why" id="why"></p>
+    </div>
+    <p class="note">Score ranges are guides, not rules. Use your judgment — and write the reason either way.</p>
+  </div>
+
+<script>
+  var scores = {a:null, r:null, f:null, q:null};
+  document.querySelectorAll('.dim').forEach(function(row){
+    var dim = row.getAttribute('data-dim');
+    var seg = row.querySelector('.seg');
+    for(var i=1;i<=4;i++){
+      (function(v){
+        var b=document.createElement('button');
+        b.textContent=v; b.setAttribute('aria-pressed','false');
+        b.addEventListener('click',function(){
+          scores[dim]=v;
+          seg.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed','false');});
+          b.setAttribute('aria-pressed','true');
+          render();
+        });
+        seg.appendChild(b);
+      })(i);
+    }
+  });
+
+  function decide(a,r,f,q){
+    var total=a+r+f+q;
+    if(a===1) return {d:'Retire', why:'Accuracy of 1 — misleading or harmful as-is. Remove or archive; set a retirement date.'};
+    if(total>=12) return {d:'Leave', why:'Performing well. No action now — set a review date 6 or 12 months out.'};
+    if(r===1 && a>=3) return {d:'Repurpose', why:'Accurate but the audience or format has shifted — rebuild rather than rewrite.'};
+    if(total>=8) return {d:'Refresh', why:'Worth keeping but needs work. Open a governed brief; the finding ID travels with it.'};
+    return {d:'Retire', why:'Low across the board — not worth updating or repurposing. Remove or archive.'};
+  }
+
+  function render(){
+    if(scores.a===null||scores.r===null||scores.f===null||scores.q===null){return;}
+    var total=scores.a+scores.r+scores.f+scores.q;
+    document.getElementById('total').textContent=total;
+    var res=decide(scores.a,scores.r,scores.f,scores.q);
+    document.getElementById('decision').textContent=res.d;
+    document.getElementById('why').textContent=res.why;
+    document.getElementById('result').hidden=false;
+  }
+</script>
+</body>
+</html>
