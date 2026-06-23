@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Content Brief — Completeness Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fi-paper:#F2EFE9; --fi-card:#F8F5EF; --fi-ink:#191714; --fi-stone:#6E665C;
+    --fi-hairline:#DCD5C9; --fi-ember:#DA4F2E; --fi-ember-tint:#F0D9C9;
+    --fi-serif:'Instrument Serif',Georgia,serif; --fi-sans:'Hanken Grotesk',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--fi-paper);color:var(--fi-ink);font-family:var(--fi-sans);padding:28px;display:flex;justify-content:center}
+  .card{width:100%;max-width:620px;background:var(--fi-card);border:1px solid var(--fi-hairline);border-radius:16px;box-shadow:0 30px 60px -40px rgba(25,23,20,.5);padding:30px 32px}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--fi-ember)}
+  h1{font-family:var(--fi-serif);font-weight:400;font-size:2.4rem;line-height:1.04;margin:8px 0 4px}
+  .sub{color:var(--fi-stone);font-size:.95rem;margin:0 0 18px}
+  .item{display:flex;align-items:flex-start;gap:14px;padding:11px 8px;border-top:1px solid var(--fi-hairline);cursor:pointer;border-radius:8px}
+  .item:hover{background:var(--fi-paper)}
+  .box{flex:0 0 auto;width:24px;height:24px;border:1.6px solid var(--fi-hairline);border-radius:7px;background:var(--fi-paper);margin-top:1px;display:flex;align-items:center;justify-content:center}
+  .item.on .box{background:var(--fi-ink);border-color:var(--fi-ink)}
+  .box svg{opacity:0;width:14px;height:14px}
+  .item.on .box svg{opacity:1}
+  .lab{font-size:.97rem;font-weight:600;line-height:1.25}
+  .hint{display:block;font-weight:400;color:var(--fi-stone);font-size:.82rem;margin-top:2px}
+  .meter{display:flex;align-items:baseline;gap:10px;margin:20px 0 2px}
+  .meter .n{font-family:var(--fi-serif);font-size:2.6rem;line-height:1}
+  .meter .lab2{color:var(--fi-stone);font-size:.95rem}
+  .result{margin-top:14px;border-radius:9px;padding:16px 18px;border:1px solid var(--fi-hairline);background:var(--fi-paper)}
+  .result.pass{background:var(--fi-ember-tint);border:none;border-left:3px solid var(--fi-ember)}
+  .result .k{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--fi-stone)}
+  .result .v{font-family:var(--fi-serif);font-size:1.9rem;line-height:1.05;margin:2px 0 6px}
+  .result .why{font-size:.92rem;margin:0 0 6px}
+  .result .miss{font-size:.86rem;color:var(--fi-stone);margin:0}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="eyebrow">The Content Brief</div>
+    <h1>Run the checklist.</h1>
+    <p class="sub">Twelve checks. Every one must pass before a brief is marked Ready for Approval. One miss returns it to Draft.</p>
+    <div id="list"></div>
+    <div class="meter"><span class="n" id="count">0</span><span class="lab2">/ 12 passing</span></div>
+    <div class="result" id="result">
+      <div class="k">Verdict</div>
+      <div class="v" id="verdict">Not started</div>
+      <p class="why" id="why">Tick each check as it passes.</p>
+      <p class="miss" id="miss"></p>
+    </div>
+  </div>
+<script>
+  var items = [
+    {t:"Brief Title", h:"Descriptive — not a placeholder, not the Request Summary verbatim"},
+    {t:"Request Summary", h:"One to two sentences: what was requested and why"},
+    {t:"Audit Reference", h:"AUD-id if it came from an audit (or N/A)"},
+    {t:"Brief Type", h:"One of the four fixed options selected"},
+    {t:"Target Audience", h:"A specific audience — not “general” or “everyone”"},
+    {t:"Content Goal", h:"One sentence: what the content must achieve"},
+    {t:"Format", h:"One of the fixed options selected"},
+    {t:"Approximate Length", h:"A range or target — not blank or “TBD”"},
+    {t:"Tone Notes", h:"At least one concrete descriptor"},
+    {t:"Brief Body", h:"Structured: context, key messages, required inclusions, things to avoid"},
+    {t:"Due Date", h:"A real date"},
+    {t:"Assigned To", h:"A name or team"}
+  ];
+  var state = items.map(function(){return false;});
+  var check = '<svg viewBox="0 0 24 24" fill="none" stroke="#F2EFE9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 L10 17.5 L19 6.5"/></svg>';
+  var list = document.getElementById('list');
+  items.forEach(function(it, i){
+    var row = document.createElement('div');
+    row.className = 'item';
+    row.innerHTML = '<span class="box">'+check+'</span><span class="lab">'+it.t+'<span class="hint">'+it.h+'</span></span>';
+    row.addEventListener('click', function(){ state[i] = !state[i]; row.classList.toggle('on', state[i]); render(); });
+    list.appendChild(row);
+  });
+  function render(){
+    var pass = state.filter(Boolean).length;
+    document.getElementById('count').textContent = pass;
+    var res = document.getElementById('result');
+    var verdict = document.getElementById('verdict');
+    var why = document.getElementById('why');
+    var miss = document.getElementById('miss');
+    if(pass === 0){ res.className='result'; verdict.textContent='Not started'; why.textContent='Tick each check as it passes.'; miss.textContent=''; return; }
+    if(pass === 12){
+      res.className='result pass';
+      verdict.textContent='Ready for Approval';
+      why.textContent='All twelve checks pass. Set Status to Ready for Approval — the human sets Approval.';
+      miss.textContent='';
+    } else {
+      res.className='result';
+      verdict.textContent='Not yet — ' + (12-pass) + ' to fix';
+      why.textContent='Return to Draft, fix the flagged checks, then run the list again from the top.';
+      var open = items.filter(function(it,i){return !state[i];}).map(function(it){return it.t;});
+      miss.textContent = 'Still open: ' + open.join(' · ');
+    }
+  }
+  render();
+</script>
+</body>
+</html>
